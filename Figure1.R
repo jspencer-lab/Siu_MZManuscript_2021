@@ -274,7 +274,7 @@ sht
 sht <- Heatmap(scale_dat, col = col_fun, name = 'Column Scaled\nMarker Expression', cluster_rows = row_dend, cluster_columns = FALSE, column_order = ht_col, row_names_gp = gpar(fontsize = 5), column_names_gp = gpar(fontsize = 10), row_split = 6, show_row_dend = TRUE, heatmap_legend_param = list(direction = "horizontal"), column_names_rot = 45, border = TRUE, show_row_names = FALSE, row_dend_width = unit(2, "cm"), row_dend_gp = gpar(lwd = 2))
 
 #Plot
-pdf(file.path(out_dir, paste0("SigHypersphereHeatmapScaled.pdf")), width=6, height=6)
+pdf(file.path(out_dir, paste0("SigHypersphereHeatmapScaled.pdf")), width=4, height=6)
 
 draw(sht, heatmap_legend_side = "top", annotation_legend_side = "top", auto_adjust = FALSE)
 
@@ -302,7 +302,25 @@ for (i in 1:3){
   dat_subset <- plyr::join(dat.with.colours, sighypersphere_dat, by = "all_clusters", type = "left")
   dat_subset$subset_id <- replace_na(dat_subset$subset_id, 0)
   
-  pdf(file.path(out_dir, paste0("HypersphereScaledCounts_UMAP_sig05_labelled_", tissues_name[i], ".pdf")), width=10, height=8)
+  # pdf(file.path(out_dir, paste0("HypersphereScaledCounts_UMAP_sig05_labelled_", tissues_name[i], ".pdf")), width=10, height=8)
+  # 
+  # leg_order <- c("1", "2", "3", "4", "5", "6", "0")
+  # 
+  # a <- ggplot(data = dat_subset %>% arrange(is.sig), aes(x = UMAP1, y = UMAP2)) +
+  #   geom_point(aes(fill = count_use, size = is.sig, colour = as.factor(subset_id)), pch = 21, stroke = 2)  + 
+  #   scale_fill_viridis(option = "cividis") + 
+  #   scale_colour_manual(breaks = leg_order, values = c("0" = "transparent", "1" = "#CC476B", "2"=  "#9F7000","3" ="#6CDC52", "4" = "#009681","5" ="#0082CE", "6"= "#B646C7"), labels = c(1, 2, 3, 4, 5, 6, " ")) + 
+  #   theme_pubr() +
+  #   labs(x = "UMAP_1", y = "UMAP_2", fill = "Scaled Count", title = paste0(tissues_name[i]), size = "p < 0.05", colour = "Cluster") +
+  #   guides(fill = guide_colourbar(order = 1), size = guide_legend(order = 2, ncol = 2), colour = guide_legend(order = 3, ncol = 2)) +
+  #   theme(legend.position="right", text = element_text(size = 20), axis.ticks=element_blank(), axis.text=element_blank()) + 
+  #   scale_size_manual(values = c(0.5, 7)) 
+  # 
+  # print(a) 
+  # 
+  # dev.off()
+  
+  pdf(file.path(out_dir, paste0("HypersphereScaledCounts_UMAP_sig05_labelled_nolegend_", tissues_name[i], ".pdf")), width=10, height=10)
   
   leg_order <- c("1", "2", "3", "4", "5", "6", "0")
   
@@ -312,12 +330,13 @@ for (i in 1:3){
     scale_colour_manual(breaks = leg_order, values = c("0" = "transparent", "1" = "#CC476B", "2"=  "#9F7000","3" ="#6CDC52", "4" = "#009681","5" ="#0082CE", "6"= "#B646C7"), labels = c(1, 2, 3, 4, 5, 6, " ")) + 
     theme_pubr() +
     labs(x = "UMAP_1", y = "UMAP_2", fill = "Scaled Count", title = paste0(tissues_name[i]), size = "p < 0.05", colour = "Cluster") +
-    guides(fill = guide_colourbar(order = 1), size = guide_legend(order = 2, ncol = 2), colour = guide_legend(order = 3, ncol = 2)) +
-    theme(legend.position="right", text = element_text(size = 20), axis.ticks=element_blank(), axis.text=element_blank()) + 
+    #guides(fill = guide_colourbar(order = 1), size = guide_legend(order = 2, ncol = 2), colour = guide_legend(order = 3, ncol = 2)) +
+    theme(legend.position="none", text = element_text(size = 25), axis.ticks=element_blank(), axis.text=element_blank()) + 
     scale_size_manual(values = c(0.5, 7)) 
   
   print(a) 
   
   dev.off()
+  
   
 }

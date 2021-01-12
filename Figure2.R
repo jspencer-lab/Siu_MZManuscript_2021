@@ -68,7 +68,7 @@ names(new.cluster.ids) <- levels(donor.integrated)
 donor.integrated <- RenameIdents(donor.integrated, new.cluster.ids)
 
 donor.integrated[["subset_names"]] <- donor.integrated@active.ident
-donor.integrated@active.ident <- factor(donor.integrated@active.ident, levels = sort(levels(donor.integrated$subset_names)))
+donor.integrated@active.ident <- factor(donor.integrated@active.ident, levels = sort(levels(donor.integrated$subset_names))) #add , decreasing = T to sort
 donor.integrated$subset_names <- factor(donor.integrated$subset_names, levels = sort(levels(donor.integrated$subset_names)))
 
 ####Fig2a (ADT vs RNA UMAP)
@@ -103,20 +103,65 @@ donor.integrated <- AddModuleScore(donor.integrated, list(c("IGHG1", "IGHG2", "I
 donor.integrated <- AddModuleScore(donor.integrated, list(c('MME', 'BCL6', 'BCL7A', "PCNA")), name='GC.RNA', assay = "RNA")
 
 rna_features_output_split_dot <- c("IGHD", "IGHM", "CD27", "CD1C", "CD24", "CD38", "CR2", "BCL6", "BCL7A", "PCNA", "MME", "MZB1", "COCH", "PLD4", "ZEB2", "CCR7", "CXCR5", "IGLL5", "MX1", "GC.RNA1", "IgG.RNA1", "IgA.RNA1")
-cytof_markers <- c("CD180", "MS4A1", "CD40", "IGHM", "PTPRC", "CD27", "CD24", "TNFSF13B", "CXCR5", "CCR7", "CD38", "IL2RA", "IgA.RNA1", "IGHD", "TNFRSF17", "TNFRSF13B", "MME", "IL7R", "CD80", "PDCD1")
+cytof_markers <- c("CD180", "MS4A1", "CD40", "IGHM", "PTPRC", "CD27", "CD24", "TNFSF13B", "CXCR5", "CCR7", "CD38", "IL2RA", "IgA.RNA1", "IGHD", "TNFRSF17", "TNFRSF13B", "MME", "IL7R", "CD80", "PDCD1", "ITGB7")
+cytof_markers2 <- c("CCR7", "CXCR5", "TNFRSF13C", "CD24", "CD27")
 other <- c("SPN")
 
 plot_cytofdot <- DotPlot(donor.integrated, features = cytof_markers, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
   RotatedAxis() +
   scale_color_viridis_c() +
-  theme(axis.title.x=element_blank(), axis.title.y=element_blank())
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+  
 file_name <- paste0("tissues_cytofdotplot.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 25, height = 15, units = c("cm"))
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 21, height = 15, units = c("cm"))
 
+plot_cytofdot <- DotPlot(donor.integrated, features = cytof_markers2, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_sig_cytofdotplot.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 12, height = 16, units = c("cm"))
+
+#b7 only
+plot_cytofdot <- DotPlot(donor.integrated, features = "ITGB7", scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_b7_dotplot.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 7, height = 16, units = c("cm"))
+
+plot_cytofdot <- DotPlot(donor.integrated, features = "B7", scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA", scale.min = 80, scale.max = 100) +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  scale_x_discrete(labels = "\u03B27_adt") +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_adtb7_dotplot.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 10, height = 20, units = c("cm"))
+
+plot_cytofdot <- DotPlot(donor.integrated, features = c("ITGB7", "B7"), scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA", scale.min = 25, scale.max = 100) +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  scale_x_discrete(labels = c("ITGB7", "\u03B27_adt")) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_b7_rnaadt_dotplot.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 15, height = 20, units = c("cm"))
+
+#
 plot_alldot <- DotPlot(donor.integrated, features = rna_features_output_split_dot, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
   RotatedAxis() +
   scale_color_viridis_c() +
-  theme(axis.title.x=element_blank(), axis.title.y=element_blank())
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
 file_name <- paste0("tissues_dotplot2.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_alldot, width = 25, height = 15, units = c("cm"))
 

@@ -17,6 +17,37 @@ plot_umapdonor <- DimPlot(donor.integrated, group.by = "donor", pt.size = 0.3) +
 file_name <- paste0("UMAP_origident.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_umapdonor, units = c("cm"))
 
+#### Fig SX (DE genes per subset)
+idents_list <- levels(donor.integrated$subset_names)
+
+de_pos_list <- {}
+de_neg_list <- {}
+
+for (i in 1:length(idents_list)){
+  ident1 <- idents_list[i]
+  
+  condition.diffgenes <- FindMarkers(donor.integrated, ident.1 = ident1)
+  #file_name <- paste0("cluster", ident1, "_degenes.csv")
+  #write.csv(condition.diffgenes, file=file.path(out_dir, file_name))
+  pos_dat <- subset(condition.diffgenes, avg_logFC > 0)
+  neg_dat <- subset(condition.diffgenes, avg_logFC < 0)
+  
+  pos_marker <- rownames(pos_dat)
+  neg_marker <- rownames(neg_dat)
+  
+  de_pos_list[[ident1]] <- pos_marker
+  de_neg_list[[ident1]] <- neg_marker
+}
+
+de_pos_summary <- t(plyr::ldply(de_pos_list, rbind, .id = "cluster"))
+de_neg_summary <- t(plyr::ldply(de_neg_list, rbind, .id = "cluster"))
+
+file_name <- paste0("pos_degenes_summary.csv")
+write.csv(de_pos_summary, file=file.path(out_dir, file_name), col.names = F)
+
+file_name <- paste0("neg_degenes_summary.csv")
+write.csv(de_neg_summary, file=file.path(out_dir, file_name), col.names = F)
+
 #### Fig SX (DN differences)
 DefaultAssay(donor.integrated) <- "RNA"
 

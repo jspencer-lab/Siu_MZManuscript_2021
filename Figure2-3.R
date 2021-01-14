@@ -42,7 +42,7 @@ db_all <- {}
 
 for(i in 1:3){
 donor <- donor_list[i]
-#donor <- "C"
+donor <- "C"
 db <- readChangeoDb(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
 
 #Import seurat_metadata

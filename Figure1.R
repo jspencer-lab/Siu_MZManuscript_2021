@@ -340,3 +340,48 @@ for (i in 1:3){
   
   
 }
+
+#MZ hyperspheres
+library(ggpubr)
+mz_hyperspheres <- subset(sighypersphere_dat, subset_id %in% c(3, 4), select = c(all_clusters, subset_id))
+rownames(mz_hyperspheres) <- mz_hyperspheres$all_clusters
+
+mz_heatmap <- subset(dat_heatmap, rownames(dat_heatmap) %in% mz_hyperspheres$all_clusters)
+
+mz_dat <- merge(mz_hyperspheres, mz_heatmap, by = "row.names", all = T)
+mz_dat <- mz_dat[,-1]
+
+mz_dat_cleanup <- subset(mz_dat, select = -c(all_clusters, Appendix, Spleen, mLN))
+mz_dat_stats <- mz_dat_cleanup %>% gather("Markers", "Intensity", 2:length(mz_dat_cleanup))
+
+mz_expressed <- mz_dat_stats %>% group_by(Markers, subset_id) %>% summarise(mean = mean(Intensity))
+mz_expressed <- subset(mz_expressed, mean > 1) #expressed markers only
+mz_markers <- unique(mz_expressed$Markers)
+
+mz_dat_stats <- subset(mz_dat_stats, Markers %in% mz_markers)
+
+stat.test <- compare_means(Intensity ~ subset_id, data = mz_dat_stats, 
+              group.by = "Markers", method = "wilcox.test")
+
+stat.test <- mz_dat_stats %>%
+  group_by(Markers) %>%
+  wilcox_test(Intensity ~ subset_id) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+stat.test <- stat.test %>% add_xy_position(x = "subset_id")
+
+
+# Box plot facetted by "dose"
+p <- ggboxplot(mz_dat_stats, x = "subset_id", y = "Intensity",
+               color = "subset_id", palette = c("3" ="#6CDC52", "4" = "#009681"),
+               add = "jitter",
+               facet.by = "Markers", short.panel.labs = FALSE)
+p <- p + stat_pvalue_manual(stat.test, label = "p.adj.signif", hide.ns = TRUE)
+
+file_name <- paste0("mz_sigmarkers.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = p, height = 8)
+
+
+
+
+

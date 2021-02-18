@@ -154,3 +154,13 @@ fcrl4_dot_V2 <- dot_dat %>%
   theme(legend.position = "right")
 file_name <- paste0("fcrl4_dotplot_V2.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = fcrl4_dot_V2, width = 10, height = 11, units = c("cm"))
+
+#### Figure 5a/b
+out_dir <- file.path("C:", "Users", "jacqu", "Dropbox", "NI Submission 2021", "figure images", "FigIMC")
+
+
+rna_plot <- FeaturePlot(donor.integrated, features = c("CD1C", "DDX21"), min.cutoff = "q15", max.cutoff = "q95", ncol = 1, cols = viridis(200), order = T) & NoAxes() & NoLegend()
+
+file_name <- paste0("umap_rnaseqmarkers2.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = rna_plot, width = 10, height = 20, units = c("cm"))
+

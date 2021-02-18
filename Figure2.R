@@ -87,6 +87,7 @@ rna_plot <- FeaturePlot(donor.integrated, features = rna_markers, min.cutoff = "
 file_name <- paste0("umap_rnaseqmarkers.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = rna_plot, width = 10, height = 40, units = c("cm"))
 
+
 ####Fig2b (subset key)
 DefaultAssay(donor.integrated) <- "integrated"
 
@@ -105,7 +106,7 @@ donor.integrated <- AddModuleScore(donor.integrated, list(c('MME', 'BCL6', 'BCL7
 rna_features_output_split_dot <- c("IGHD", "IGHM", "CD27", "CD1C", "CD24", "CD38", "CR2", "BCL6", "BCL7A", "PCNA", "MME", "MZB1", "COCH", "PLD4", "ZEB2", "CCR7", "CXCR5", "IGLL5", "MX1", "GC.RNA1", "IgG.RNA1", "IgA.RNA1")
 cytof_markers <- c("CD180", "MS4A1", "CD40", "IGHM", "PTPRC", "CD27", "CD24", "TNFSF13B", "CXCR5", "CCR7", "CD38", "IL2RA", "IgA.RNA1", "IGHD", "TNFRSF17", "TNFRSF13B", "MME", "IL7R", "CD80", "PDCD1", "ITGB7")
 cytof_markers2 <- c("CCR7", "CXCR5", "TNFRSF13C", "CD24", "CD27")
-other <- c("SPN")
+other <- c("DDX21")
 
 plot_cytofdot <- DotPlot(donor.integrated, features = cytof_markers, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
   RotatedAxis() +
@@ -165,11 +166,12 @@ plot_alldot <- DotPlot(donor.integrated, features = rna_features_output_split_do
 file_name <- paste0("tissues_dotplot2.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_alldot, width = 25, height = 15, units = c("cm"))
 
-plot_alldot <- DotPlot(donor.integrated, features = other, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
+plot_alldot <- DotPlot(donor.integrated, split.by = "tissue", cols = c("blue", "black", "red"),
+                       features = other, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
   RotatedAxis() +
   scale_color_viridis_c() +
   theme(axis.title.x=element_blank(), axis.title.y=element_blank())
-file_name <- paste0("tissues_dotplot_SPN.pdf")
+file_name <- paste0("tissues_dotplot_DDX21.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_alldot, width = 25, height = 15, units = c("cm"))
 
 

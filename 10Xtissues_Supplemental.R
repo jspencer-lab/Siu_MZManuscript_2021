@@ -79,3 +79,19 @@ dn_topgenes <- VlnPlot_2(donor.integrated,
 
 file_name <- paste0("dn_vlnplot_select.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = dn_topgenes, width = 8, height = 8)
+
+## DotPlot for aNAV
+DefaultAssay(donor.integrated) <- "RNA"
+
+anav_markers <- c("CD19", "CXCR5", "CD24", "CD38", "ITGAX")
+anav_idents <- c("aNAV", "Naive", "TS")
+
+plot_anavdot <- DotPlot(donor.integrated, features = anav_markers, scale.by = "radius", idents = anav_idents, dot.min = 0, dot.scale = 15, assay = "RNA") +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  scale_size(range = c(2, 10)) +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_anav_dotplot.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_anavdot, width = 12, height = 12, units = c("cm"))

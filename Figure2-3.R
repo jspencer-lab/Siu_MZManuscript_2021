@@ -106,6 +106,26 @@ g1 <- db_all  %>%
   ylim(0, 0.16)
 ggsave(plot = g1, filename = paste0(out_dir, "/MutationFrequency_allDonors.pdf"), width = 20, height = 15, unit = c("cm"))
 
+#Stats
+res.aov <- aov(mu_freq ~ subset_names, data = db_all) #Levenes signigifcant, not normal
+summary(res.aov)
+TukeyHSD(res.aov)
+
+plot(res.aov, 1)
+library(car)
+leveneTest(mu_freq ~ subset_names, data = db_all)
+plot(res.aov, 2)
+aov_residuals <- residuals(object = res.aov )
+shapiro.test(x = aov_residuals)
+
+kruskal.test(mu_freq ~ subset_names, data = db_all)
+
+
+
+
+
+
+
 #### Fig 3a (dissemination ratio)
 statReturn <- NULL
 donor_list <- c("A", "B", "C")
@@ -450,32 +470,42 @@ for (x in 1:length(tissue_list)){
   tissue_cor$R$P <- tissue_cor$R$P[classif_order, classif_order]
   
   
-  file_name <- paste0("corr_alphaorder_3siglevels_", tissue2, ".pdf")
+  # file_name <- paste0("corr_alphaorder_3siglevels_", tissue2, ".pdf")
+  # pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
+  # par(xpd=TRUE)
+  # corrplot(tissue_cor$R$r, type="lower", order="original", method = "color", 
+  #          p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1, 
+  #          insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
+  #          title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
+  # 
+  # dev.off()
+  
+  file_name <- paste0("corr_alphaorder_blank_", tissue2, ".pdf")
   pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
   par(xpd=TRUE)
   corrplot(tissue_cor$R$r, type="lower", order="original", method = "color", 
            p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1, 
-           insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
+           insig = "n", tl.col = "black", tl.srt = 90, outline = "gray",
            title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
   
   dev.off()
   
   #
-  classif_order <- c('TS', 'Naive', 'MZB-1', 'MZB-2', 'aNAV', 'DN-A', 'DN-B', 'IgM-only', 'GC', 'Memory', 'ABC1', 'ABC2', 'ABC3', 'ABC4', 'PB')  
-  tissue_cor$R$r <- tissue_cor$R$r[classif_order, classif_order]
-  tissue_cor$P <- tissue_cor$P[classif_order, classif_order]
-  tissue_cor$R$P <- tissue_cor$R$P[classif_order, classif_order]
-  
-  
-  file_name <- paste0("corr_manualorder_3siglevels_", tissue2, ".pdf")
-  pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
-  par(xpd=TRUE)
-  corrplot(tissue_cor$R$r, type="lower", order="original", method = "color", 
-           p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1, 
-           insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
-           title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
-  
-  dev.off()
+  # classif_order <- c('TS', 'Naive', 'MZB-1', 'MZB-2', 'aNAV', 'DN-A', 'DN-B', 'IgM-only', 'GC', 'Memory', 'ABC1', 'ABC2', 'ABC3', 'ABC4', 'PB')  
+  # tissue_cor$R$r <- tissue_cor$R$r[classif_order, classif_order]
+  # tissue_cor$P <- tissue_cor$P[classif_order, classif_order]
+  # tissue_cor$R$P <- tissue_cor$R$P[classif_order, classif_order]
+  # 
+  # 
+  # file_name <- paste0("corr_manualorder_3siglevels_", tissue2, ".pdf")
+  # pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
+  # par(xpd=TRUE)
+  # corrplot(tissue_cor$R$r, type="lower", order="original", method = "color", 
+  #          p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1, 
+  #          insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
+  #          title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
+  # 
+  # dev.off()
   
 }
 

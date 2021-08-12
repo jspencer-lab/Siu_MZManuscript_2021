@@ -1,5 +1,5 @@
-#Figure2-3 (Figure2e, Figure 3a-c)
-#VDJ analysis of tisues
+#Figure2-3 (Figure2d, Figure 3a, c, d)
+#scVDJ analysis of tisues
 
 #For this section, all the analysis was done using the Kleinstein Immcantation (Version 4.0) docker image and RStudio. For more details on how to install this, please visit their documentation: https://immcantation.readthedocs.io/en/stable/docker/intro.html. Majority of this analysis was done prior to the latest Immcantation update which incorporates more streamline 10X analysis into their pipeline.
 
@@ -33,7 +33,11 @@ options(future.globals.maxSize = 4000 * 1024^2)
 color_use <- c("#7B52DD", "#7DE3D4", "#DC694C", "#77E595", "#E4DB61", "#D78AD6", "#CFDFDE", "#E0E2AC", "#9B9C59", "#778BD5", "#95EA4F", "#D3B6DB", "#75ABC5", "#DA4BA0", "#D49794")
 
 #Directories
-out_dir <- file.path("C:", "Users", "jacqu", "Dropbox", "NI Submission 2021", "figure images", "Fig3")
+out_dir <- file.path("figure images", "Fig3")
+
+in_dir <- file.path("data", "results", "changeo")
+
+seurat_metadata <- readRDS(paste0("/Data/Seurat saved objects/integratedall_metadata_donorB.rds"))
 
 
 #Importing, integrating VDJ-Seurat, pooling donor data
@@ -43,10 +47,10 @@ db_all <- {}
 for(i in 1:3){
 donor <- donor_list[i]
 donor <- "C"
-db <- readChangeoDb(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
+db <- readChangeoDb(file.path(in_dir, paste0("donor", donor, "_data_ph_genotyped_germ-pass.tsv")))
 
 #Import seurat_metadata
-seurat_metadata <- readRDS(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/integratedall_metadata_donor", donor, ".rds"))
+seurat_metadata <- readRDS(paste0("data/integratedall_metadata_donor", donor, ".rds"))
 seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
 seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
 
@@ -90,7 +94,7 @@ db_all <- transform(db_all, seurat_clusters = factor(seurat_clusters, levels = s
 
 db_all$tissue <- as.factor(db_all$tissue.x)
 
-#### Fig 2e
+#### Fig 2d
 db_all <- db_all %>% dplyr::mutate(mutation = 1 - v_identity)
 
 g1 <- db_all  %>%
@@ -121,11 +125,6 @@ shapiro.test(x = aov_residuals)
 kruskal.test(mu_freq ~ subset_names, data = db_all)
 
 
-
-
-
-
-
 #### Fig 3a (dissemination ratio)
 statReturn <- NULL
 donor_list <- c("A", "B", "C")
@@ -135,10 +134,10 @@ for (i in 1:3){
   donor <- donor_list[i]
   
   #import 
-  db <- readChangeoDb(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
+  db <- readChangeoDb(file.path(in_dir, paste0("donor", donor, "_data_ph_genotyped_germ-pass.tsv")))
   
   #Import seurat_metadata
-  seurat_metadata <- readRDS(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/integratedall_metadata_donor", donor, ".rds"))
+  seurat_metadata <- readRDS(paste0("integratedall_metadata_donor", donor, ".rds"))
   seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
   seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
   
@@ -256,10 +255,10 @@ for (i in 1:3){
   donor <- donor_list[i]
   
   #import 
-  db <- readChangeoDb(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
+  db <- readChangeoDb(paste0("data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
   
   #Import seurat_metadata
-  seurat_metadata <- readRDS(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/integratedall_metadata_donor", donor, ".rds"))
+  seurat_metadata <- readRDS(paste0("data/integratedall_metadata_donor", donor, ".rds"))
   seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
   seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
   
@@ -377,10 +376,10 @@ avgratio_donor <- statReturn3 %>% group_by(Donor) %>% summarise(avg_percent = me
 statReturn3 <- right_join(statReturn3, avgratio_donor)
 
 #Log Change (fold change of Dis/Res ratio over average ratios per donor)
-statReturn3 <- statReturn3 %>% mutate(LogChange = Percent/ avg_percent)
+statReturn4 <- statReturn3 %>% mutate(LogChange = Percent/ avg_percent)
 
 
-stat_plot <- ggplot(statReturn3, aes(x = Subset, y = LogChange)) + 
+stat_plot <- ggplot(statReturn4, aes(x = Subset, y = LogChange)) + 
   geom_boxplot() +
   geom_point(aes(colour = Donor), size = 5) +
   labs(y = "Normalized Dissiminated / Resident Clones") +
@@ -393,7 +392,7 @@ stat_plot <- ggplot(statReturn3, aes(x = Subset, y = LogChange)) +
 file_name <- paste0("percentage_disseminatedclones_foldchange.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = stat_plot, width = 25, height = 15, units = c("cm"))
 
-#### Fig 3b (correlation tables)
+#### Fig 3c (correlation tables)
 library(RcmdrMisc) #rcorr.adjust function
 library(corrplot) #to make correlation plots
 
@@ -403,10 +402,10 @@ tissue_list <- c("APP", "MLN", "SPL")
 
 for (j in 1:length(donor_list)){
   donor <- donor_list[j]
-  db <- readChangeoDb(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
+  db <- readChangeoDb(paste0("data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
   
   #Import seurat_metadata
-  seurat_metadata <- readRDS(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/integratedall_metadata_donor", donor, ".rds"))
+  seurat_metadata <- readRDS(paste0("integratedall_metadata_donor", donor, ".rds"))
   seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
   seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
   
@@ -470,15 +469,15 @@ for (x in 1:length(tissue_list)){
   tissue_cor$R$P <- tissue_cor$R$P[classif_order, classif_order]
   
   
-  # file_name <- paste0("corr_alphaorder_3siglevels_", tissue2, ".pdf")
-  # pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
-  # par(xpd=TRUE)
-  # corrplot(tissue_cor$R$r, type="lower", order="original", method = "color", 
-  #          p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1, 
-  #          insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
-  #          title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
-  # 
-  # dev.off()
+  file_name <- paste0("corr_alphaorder_3siglevels_", tissue2, ".pdf")
+  pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
+  par(xpd=TRUE)
+  corrplot(tissue_cor$R$r, type="lower", order="original", method = "color",
+           p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1,
+           insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
+           title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
+
+  dev.off()
   
   file_name <- paste0("corr_alphaorder_blank_", tissue2, ".pdf")
   pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
@@ -490,33 +489,16 @@ for (x in 1:length(tissue_list)){
   
   dev.off()
   
-  #
-  # classif_order <- c('TS', 'Naive', 'MZB-1', 'MZB-2', 'aNAV', 'DN-A', 'DN-B', 'IgM-only', 'GC', 'Memory', 'ABC1', 'ABC2', 'ABC3', 'ABC4', 'PB')  
-  # tissue_cor$R$r <- tissue_cor$R$r[classif_order, classif_order]
-  # tissue_cor$P <- tissue_cor$P[classif_order, classif_order]
-  # tissue_cor$R$P <- tissue_cor$R$P[classif_order, classif_order]
-  # 
-  # 
-  # file_name <- paste0("corr_manualorder_3siglevels_", tissue2, ".pdf")
-  # pdf(file = file.path(out_dir, file_name), width = 5, height = 5)
-  # par(xpd=TRUE)
-  # corrplot(tissue_cor$R$r, type="lower", order="original", method = "color", 
-  #          p.mat = tissue_cor$P, sig.level = c(.001, .01, .05), pch.cex = 1, 
-  #          insig = "label_sig", tl.col = "black", tl.srt = 90, outline = "gray",
-  #          title = paste0(tissue2), mar=c(0,0,2,0), diag = FALSE)
-  # 
-  # dev.off()
-  
 }
 
-#### Fig 3c (circos)
-donor <- "A"
+#### Fig 3d (circos)
+donor <- "B"
 
 #import 
-db <- readChangeoDb(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
+db <- readChangeoDb(paste0("data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
 
 #Import seurat_metadata
-seurat_metadata <- readRDS(paste0("C:/Users/jacqu/Documents/JS10X_013_ALL/data/integratedall_metadata_donor", donor, ".rds"))
+seurat_metadata <- readRDS(paste0("integratedall_metadata_donor", donor, ".rds"))
 seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
 seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
 
@@ -557,14 +539,14 @@ df_NAMES$seurat_clusters <- factor(df_NAMES$seurat_clusters, levels=levels(db$se
 NAMES_ORDER <- NAMES[order(df_NAMES$tissue, df_NAMES$seurat_clusters)]
 db$TIS_SC <- factor(db$TIS_SC, levels=NAMES_ORDER)
 
-# Circos plot with unique links (collapsed clones)
 #COLOURS
-#https://github.com/davidmerfield/randomColor
 COLORS <- rep(color_use, 3)
 nCOLORS <- length(COLORS)
 
 COLORS_NAMES <- levels(db$TIS_SC)
 names(COLORS) <- COLORS_NAMES
+
+# Circos plot with unique links (collapsed clones)
 
 #Make data frame of only connections (no value)
 table(db$TIS_SC, db$seurat_clusters)
@@ -575,8 +557,6 @@ groups <- dt[,yidx]
 groupsLength <- unlist(lapply(groups,length))
 groups <- groups[groupsLength>1]
 numbOfTotalGroups <- length(groups)
-
-#donorA big clone: groups[[58]] (i <- 58)
 
 listResults2  <- #List of matching clones between subsets / tissues
   foreach( i=iterators::icount(numbOfTotalGroups)) %do% {
@@ -718,7 +698,7 @@ TRACK_ORDER <- TIS_SC_COMBO[order(df_NAMES$TISSUE, df_NAMES$SEURAT_CLUSTERS)]
 cut_off <- dat_circcos$freq[length(dat_circcos$freq)*0.05]
 TRACK_COLORS <- rep("black", nrow(dat_circcos))
 TRACK_COLORS[dat_circcos$freq < cut_off] = "gray90"   #other NULL colour "#00000000"
-TRACK_COLORS[c(7, 25, 47)] = "red"  #C: 5, 8, 13 #B: 2,  #A:7, 25, 47
+TRACK_COLORS[c(21, 30)] = "red"  #C: 5, 8, 13 #B: 21, 30,  #A:7, 25, 47
 
 #CIRCOS
 pdf(file = paste0(out_dir, "/donor", donor, "_circos_disseminateduniquelinks_renamedsubset_red.pdf"), 

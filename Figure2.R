@@ -3,7 +3,7 @@
 
 #Library
 library(tidyr)
-library(Seurat)
+library(Seurat) #V3.2.2
 library(patchwork)
 library(tidyverse)
 
@@ -18,15 +18,16 @@ library(ggpubr)
 
 #Theme
 library(randomcoloR)
-#color_use <- distinctColorPalette(15) #length(levels(donor.integrated$subset_names))
 color_use <- c("#7B52DD", "#7DE3D4", "#DC694C", "#77E595", "#E4DB61", "#D78AD6", "#CFDFDE", "#E0E2AC", "#9B9C59", "#778BD5", "#95EA4F", "#D3B6DB", "#75ABC5", "#DA4BA0", "#D49794")
 
 #Directories
-dir <- file.path("C:", "Users", "jacqu", "OneDrive - University Of Cambridge", "PhD", "10X", "R_analysis", "output")
-out_dir <- file.path("C:", "Users", "jacqu", "Dropbox", "NI Submission 2021", "figure images", "Fig2")
+dir <- file.path("R_analysis", "output")
+dir_clust <- file.path("Data", "Seurat saved objects")
+
+out_dir <- file.path("figure images", "Fig2")
 
 #Import data
-donor.integrated <- readRDS(file = file.path(dir, "JS10X_012 (Integration with regression)", "integration_allsamples", "integrated_tissue.rds"))
+donor.integrated <- readRDS(file = file.path(dir, "integrated_tissue.rds"))
 
 #Clustering
 pca_dim <- 1:25
@@ -37,7 +38,7 @@ DefaultAssay(donor.integrated) <- "integrated"
 donor.integrated <- RunPCA(donor.integrated)
 donor.integrated <- RunUMAP(object = donor.integrated, dims = pca_dim, n.neighbors = 30)
 donor.integrated <- FindNeighbors(donor.integrated, reduction = "pca", dims = pca_dim, 
-                                  assay = "integrated")
+                                  assay = "integrated", nn.method="rann") #nn.method="rann"
 donor.integrated <- FindClusters(donor.integrated, resolution = cluster_res)
 
 ##Rearrange order based on cluster tree (hierarchical)
@@ -68,8 +69,10 @@ names(new.cluster.ids) <- levels(donor.integrated)
 donor.integrated <- RenameIdents(donor.integrated, new.cluster.ids)
 
 donor.integrated[["subset_names"]] <- donor.integrated@active.ident
-donor.integrated@active.ident <- factor(donor.integrated@active.ident, levels = sort(levels(donor.integrated$subset_names))) #add , decreasing = T to sort
+donor.integrated@active.ident <- factor(donor.integrated@active.ident, levels = sort(levels(donor.integrated$subset_names), decreasing = T)) #add , decreasing = T to sort
 donor.integrated$subset_names <- factor(donor.integrated$subset_names, levels = sort(levels(donor.integrated$subset_names)))
+
+saveRDS(donor.integrated, file = file.path(out_dir, "donorintegrated.RDS"))
 
 ####Fig2a (ADT vs RNA UMAP)
 adt_markers <- c("adt_CD27", "adt_CD38", "adt_IGM", "adt_IGD")
@@ -126,6 +129,7 @@ plot_cytofdot <- DotPlot(donor.integrated, features = cytof_markers2, scale.by =
 file_name <- paste0("tissues_sig_cytofdotplot.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 12, height = 16, units = c("cm"))
 
+#Fig 6J
 #b7 only
 plot_cytofdot <- DotPlot(donor.integrated, features = "ITGB7", scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
   RotatedAxis() +
@@ -157,13 +161,16 @@ file_name <- paste0("tissues_b7_rnaadt_dotplot.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 15, height = 20, units = c("cm"))
 
 #
+rna_features_output_split_dot <- c("IGHD", "IGHM", "CD27", "CD1C", "PLD4", "CR2", "CCR7", "MME", "MZB1", "IGLL5", "CD24", "CD38", "COCH", "CXCR5", "ZEB2", "MX1", "BCL6", "BCL7A", "PCNA", "GC.RNA1", "IgG.RNA1", "IgA.RNA1")
+
+
 plot_alldot <- DotPlot(donor.integrated, features = rna_features_output_split_dot, scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
   RotatedAxis() +
   scale_color_viridis_c() +
   theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
   guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
 
-file_name <- paste0("tissues_dotplot2.pdf")
+file_name <- paste0("tissues_dotplot.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = plot_alldot, width = 25, height = 15, units = c("cm"))
 
 plot_alldot <- DotPlot(donor.integrated, split.by = "tissue", cols = c("blue", "black", "red"),

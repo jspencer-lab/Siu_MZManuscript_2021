@@ -1,6 +1,6 @@
-#Figure 5
+#Figure 5 (and S4)
 
-#See Cytomapper for details about how to set up Images/ Masks/ and SCE object.
+#See Cytomapper for details about how to set up Images/ Masks/ and SCE object. Histocat (https://bodenmillergroup.github.io/histoCAT/) was used for composite images.
 
 #Libraries
 library(cytomapper)
@@ -17,7 +17,8 @@ library(tidyr)
 library(lme4)
 
 #Directories
-out_dir <- file.path("C:", "Users", "jacqu", "Dropbox", "NI Submission 2021", "figure images", "FigIMC")
+dir <- file.path()
+out_dir <- file.path("figure images", "FigIMC")
 
 ##Analysis
 spleenImages <- readRDS(file.path(dir, "spleen_images.rds"))
@@ -250,3 +251,43 @@ ggplot(subset(slope_dat, Marker %in% c("DDX21", "DNA")), aes(x = Marker, y = Slo
   scale_fill_manual(values = c("#00BFC4", "#999999")) +
   labs(y = "Slope") +
   theme(axis.title.x = element_blank(), legend.position = "none")
+
+#Fig 5K
+
+##Dataframe with CD1c, CD20, DDX21 values
+cd1c_dat <- data.frame("CD1c" = retrieveCellInfo(spleenSCE, by = "CD1c", search = c("assays"), exprs_values = "logexprs")$value)
+cd20_dat <- data.frame("CD20" = retrieveCellInfo(spleenSCE, by = "CD20", search = c("assays"), exprs_values = "logexprs")$value)
+ddx21_dat <- data.frame("DDX21" = retrieveCellInfo(spleenSCE, by = "DDX21", search = c("assays"), exprs_values = "logexprs")$value)
+
+image_dat <- data.frame("ImageName" = retrieveCellInfo(spleenSCE, by = "ImageName", exprs_values = "logexprs")$value)
+id_dat <- data.frame("id" = retrieveCellInfo(spleenSCE, by = "id", exprs_values = "logexprs")$value)
+
+retrieve_dat <- data.frame(id_dat, image_dat, cd1c_dat, cd20_dat, ddx21_dat)
+
+cd1c_threshold <- 1.2
+cd20_threshold <- 1
+
+retrieve_dat$bcell_label <- retrieve_dat$CD20 > cd20_threshold
+retrieve_dat$mz_label <- retrieve_dat$CD1c > cd1c_threshold
+
+mz_retrieve_dat <- subset(retrieve_dat, bcell_label == TRUE & mz_label == TRUE)
+
+cut_quartile <- function(x){factor(findInterval(x, c(-Inf, quantile(x, probs=c(0.25, .5, .75)), Inf)), labels=c("DDX21_low", "DDX21_mid", "DDX21_mid","DDX21_high"))}
+
+#Determine top / bottom X% quantile
+mz_retrieve_dat <- mz_retrieve_dat %>% group_by(ImageName) %>% mutate(DDX21_quartile = cut_quartile(DDX21))
+
+test <- left_join(retrieve_dat, mz_retrieve_dat)
+
+label_mz <- test$DDX21_quartile
+
+label_mz <- gtools::na.replace(as.vector(label_mz), "other")
+
+colLabels(spleenSCE) <- label_mz
+
+#Colour cells by label
+plotCells(mask = spleenMasks, object = spleenSCE,
+          cell_id = "CellNumber", img_id = "ImageName", 
+          colour_by = "label", display = "single", 
+          colour = list(label = c(DDX21_low = "blue", DDX21_high = "red", DDX21_mid = "grey", other = "grey")), image_title = NULL, scale_bar = list(length = 140),
+          save_plot = list(filename = file.path(proj_dir, out_dir, "MZ_DDX21quartilesoverlay_imagetitlenull.png")))

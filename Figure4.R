@@ -11,11 +11,11 @@ library(viridis)
 library(ggpubr)
 
 #Directories
-dir <- file.path("C:", "Users", "jacqu", "OneDrive - University Of Cambridge", "PhD", "10X", "R_analysis", "output")
-out_dir <- file.path("C:", "Users", "jacqu", "Dropbox", "NI Submission 2021", "figure images", "Fig4")
+dir <- file.path("")
+out_dir <- file.path("figure images", "Fig4")
 
 #Import data
-donor.integrated <- readRDS(file = file.path(dir, "JS10X_012 (Integration with regression)", "integration_allsamples", "integrated_tissue.rds"))
+donor.integrated <- readRDS(file = file.path(dir, "integration_allsamples", "integrated_tissue.rds"))
 
 #### Fig 4a (volcano)
 library(EnhancedVolcano)
@@ -34,29 +34,6 @@ mz_volcano <- EnhancedVolcano(mz.de.markers, lab = rownames(mz.de.markers),
                 boxedLabels = T, drawConnectors = T)
 file_name <- paste0("mzb1vs2_volcano_select.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = mz_volcano, width = 10, height = 10)
-
-#### Fig 4a (linear)
-mz.cells <- subset(donor.integrated, idents = c("MZB-1", "MZB-2"))
-
-avg.mz.cells <- log1p(AverageExpression(mz.cells, verbose = FALSE)$RNA)
-avg.mz.cells$gene <- rownames(avg.mz.cells)
-avg.mz.cells$diff <- abs(avg.mz.cells$`MZB-1` - avg.mz.cells$`MZB-2`)
-avg.mz.cells$`MZB-1` <- as.numeric(avg.mz.cells$`MZB-1`)
-avg.mz.cells$`MZB-2` <- as.numeric(avg.mz.cells$`MZB-2`)
-
-genesdiff <- subset(avg.mz.cells, diff > 0.5 & gene == "CCR7")
-
-genesdiff <- subset(avg.mz.cells, gene == "CCR7")
-
-
-p1 <- ggplot(avg.mz.cells, aes(x = `MZB-1`, y = `MZB-2`)) + 
-      geom_point() + 
-      geom_smooth(method=lm , color="navy", fill="grey", se=TRUE) +
-      theme_pubr()
-p1 <- LabelPoints(plot = p1, points = genesdiff$gene, repel = TRUE, xnudge = 0, ynudge = 0, colour = "red")
-
-file_name <- paste0("MZB1vs2_linear.png")
-ggsave(filename = file.path(out_dir, file_name), plot = p1, width = 30, height = 30, units = c("cm"))
 
 #### Fig 4b (vln select)
 VlnPlot_2 <- function(object, features, idents, split.by, cols, pt.size, assay, xlab) {
@@ -86,81 +63,5 @@ mz_topgenes <- VlnPlot_2(donor.integrated,
 file_name <- paste0("mz_vlnplot_select.pdf")
 ggsave(filename = file.path(out_dir, file_name), plot = mz_topgenes, width = 12, height = 8)
 
-#### Fig 4x (mz dotplot)
-dot_marker <- c("DDX21", "CD83", "MIF", "NCL", "TNFRSF1B", "CCR7", "CD24", "CR2", "TXNIP", "LTB", "CD37", "CD27")
-
-plot_mzdot <- DotPlot(donor.integrated, features = dot_marker, idents = c("MZB-2", "MZB-1"), scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA") +
-  RotatedAxis() +
-  scale_size(range = c(1, 10)) +
-  #scale_color_viridis_c() +
-  theme(axis.title.x=element_blank(), axis.title.y=element_blank())
-file_name <- paste0("tissues_mzdotplot.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = plot_mzdot, width = 20, height = 12, units = c("cm"))
-
-#### Fig4x (tbet dotplot)
-tbet_dot <- DotPlot(donor.integrated, features = "TBX21", scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA", group.by = "subset_names", split.by = "tissue", cols = c("blue", "black", "red"), 
-                    idents = c("MZB-1", "MZB-2", "aNAV", "ABC1", "ABC2", "DN-A", "DN-B", "Memory", "GC")) + labs(x = " ", y = " ") 
-file_name <- paste0("tbet_dotplot_short.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = tbet_dot, width = 5, height = 10)
-
-#V2
-tbet_dot_dat <- tbet_dot$data
-id <- tbet_dot_dat$id
-tbet_dot_dat$subset <- unlist(stringr::str_split(id, "_"))[ c(TRUE,FALSE) ]
-tbet_dot_dat$tissue <- unlist(stringr::str_split(id, "_"))[ c(FALSE,TRUE) ]
-
-mid <- mean(tbet_dot_dat$avg.exp)
-avg.exp.lim <- tbet_dot_dat$avg.exp
-avg.exp.lim[avg.exp.lim > 0.1] <- 0.1
-tbet_dot_dat$avg.exp.lim <- avg.exp.lim
-    
-tbet_dot_V2 <- tbet_dot_dat %>% 
-  ggplot(aes(x=tissue, y = subset, color = avg.exp.lim, size = pct.exp*2)) + 
-  scale_color_viridis(option = "D", limits = c(0,0.1)) +
-  geom_point() +
-  theme_pubr() +
-  labs(colour = "Average \nTbet \nExpression", size = "% Expressed", x = " ", y = " ") +
-  theme(legend.position = "right")
-file_name <- paste0("tbet_dotplot_maxed.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = tbet_dot_V2, width = 10, height = 10, units = c("cm"))
-
-tbet_dot_V2 <- tbet_dot_dat %>% 
-  ggplot(aes(x=tissue, y = subset, color = avg.exp, size = pct.exp*2)) + 
-  scale_color_viridis(option = "D") +
-  geom_point() +
-  theme_pubr()
-file_name <- paste0("tbet_dotplot_V2.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = tbet_dot_V2, width = 10, height = 10, units = c("cm"))
-
-#### Fig4x (fcrl4 dotplot)
-fcrl4_dot <- DotPlot(donor.integrated, features = "FCRL4", scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA", group.by = "subset_names", split.by = "tissue", cols = c("blue", "black", "red"), 
-                    idents = c("MZB-1", "MZB-2", "aNAV", "ABC1", "ABC2", "DN-A", "DN-B", "Memory", "GC")
-                    ) + labs(x = " ", y = " ") 
-file_name <- paste0("fcrl4_dotplot_short.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = fcrl4_dot, width = 5, height = 10)
-
-#V2
-dot_dat <- fcrl4_dot$data
-id <- dot_dat$id
-dot_dat$subset <- unlist(stringr::str_split(id, "_"))[ c(TRUE,FALSE) ]
-dot_dat$tissue <- unlist(stringr::str_split(id, "_"))[ c(FALSE,TRUE) ]
-
-fcrl4_dot_V2 <- dot_dat %>% 
-  ggplot(aes(x=tissue, y = subset, color = avg.exp, size = pct.exp*2)) + 
-  scale_color_viridis(option = "D") +
-  geom_point() +
-  theme_pubr() +
-  labs(colour = "Average \nFcRL4 \nExpression", size = "% Expressed", x = " ", y = " ") +
-  theme(legend.position = "right")
-file_name <- paste0("fcrl4_dotplot_V2.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = fcrl4_dot_V2, width = 10, height = 11, units = c("cm"))
-
-#### Figure 5a/b
-out_dir <- file.path("C:", "Users", "jacqu", "Dropbox", "NI Submission 2021", "figure images", "FigIMC")
-
-
-rna_plot <- FeaturePlot(donor.integrated, features = c("CD1C", "DDX21"), min.cutoff = "q15", max.cutoff = "q95", ncol = 1, cols = viridis(200), order = T) & NoAxes() & NoLegend()
-
-file_name <- paste0("umap_rnaseqmarkers2.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = rna_plot, width = 10, height = 20, units = c("cm"))
+#Fig 4C was created using GSEA software from Broad Institute (https://www.gsea-msigdb.org/gsea/index.jsp)
 

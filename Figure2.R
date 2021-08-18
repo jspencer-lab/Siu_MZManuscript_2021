@@ -1,5 +1,5 @@
 #Figure2
-#Code for transcriptomic analysis shown in Figure 2 (a-d, f)
+#Code for transcriptomic analysis shown in Figure 2 (a-d, f) and Fig 6 (h, j)
 
 #Library
 library(tidyr)
@@ -215,3 +215,29 @@ pwc <- percentage %>%
   group_by(subset_names) %>%
   emmeans_test(percent ~ tissue, p.adjust.method = "bonferroni") 
 pwc
+
+#Fig 6H
+donor.integrated@active.ident <- factor(donor.integrated@active.ident, levels = sort(levels(donor.integrated$subset_names), decreasing = T)) #add , decreasing = T to sort
+
+cytof_markers <- c("CCR7", "CXCR5", "TNFRSF13C", "CD24", "CD27")
+
+plot_cytofdot <- DotPlot(donor.integrated, features = cytof_markers, scale.by = "radius", dot.min = 0, dot.scale = 15, col.min = -2, col.max = 2, assay = "RNA", scale.min = 0, scale.max = 60) +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_sig_cytofdotplot_allsame.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 12, height = 16, units = c("cm"))
+
+
+#Fig 6J
+plot_cytofdot <- DotPlot(donor.integrated, features = "B7", scale.by = "radius", dot.min = 0, dot.scale = 15, assay = "RNA", scale.min = 80, scale.max = 100) +
+  RotatedAxis() +
+  scale_color_viridis_c() +
+  theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+  scale_x_discrete(labels = "\u03B27_adt") +
+  guides(size = guide_legend(title = "Percent\nExpressed"), color = guide_colourbar(title = "Average\nExpression"))
+
+file_name <- paste0("tissues_adtb7_dotplot.pdf")
+ggsave(filename = file.path(out_dir, file_name), plot = plot_cytofdot, width = 10, height = 20, units = c("cm"))

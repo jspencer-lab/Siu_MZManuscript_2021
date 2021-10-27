@@ -125,11 +125,13 @@ shapiro.test(x = aov_residuals)
 kruskal.test(mu_freq ~ subset_names, data = db_all)
 
 
-#### Fig 3a (dissemination ratio)
-statReturn <- NULL
+#### Fig 3a 
+`%notin%` <- Negate(`%in%`)
+
+df_all <- {}
+numcellssubset_all <- {}
 donor_list <- c("A", "B", "C")
 
-## Import Data (do the big loop here) 
 for (i in 1:3){
   donor <- donor_list[i]
   
@@ -137,7 +139,7 @@ for (i in 1:3){
   db <- readChangeoDb(file.path(in_dir, paste0("donor", donor, "_data_ph_genotyped_germ-pass.tsv")))
   
   #Import seurat_metadata
-  seurat_metadata <- readRDS(paste0("integratedall_metadata_donor", donor, ".rds"))
+  seurat_metadata <- readRDS(paste0("C:/Users/Jacqueline Siu/OneDrive - King's College London/Science/Projects/2020_tissues10X/Data/Seurat saved objects/JS10X_013_ALL integratedall_metadata_donor", donor, ".rds"))
   seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
   seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
   
@@ -151,7 +153,7 @@ for (i in 1:3){
   
   ##Adding simplified subset names
   subset_ids <- data.frame(seurat_clusters = 0:22, 
-                           subset_names = c("MZ-A", "TS", "MALAT1", "ActB1", "CD27+IgG", "ANAV", "Naive", "CD27+IgA", "ActB2", "IgM-only", "MZ-B", "Naive", "CD27+IgG", "GC", "IgM-only", "GC", "Naive", "GC", "DN-A", "ANAV", "DN-B", "Interferon", "PB"))
+                           subset_names = c("MZB-1", "TS", "AcB3", "AcB1", "Memory", "aNAV", "Naive", "Memory", "AcB2", "IgM-only", "MZB-2", "Naive", "Memory", "GC", "IgM-only", "GC", "Naive", "GC", "DN-A", "aNAV", "DN-B", "AcB4", "PB"))
   
   subset_ids$seurat_clusters <- as.factor(subset_ids$seurat_clusters)
   
@@ -170,6 +172,12 @@ for (i in 1:3){
                           frequency=T, 
                           combine=T,
                           nproc=16)
+  numcells_subset <- db %>% group_by(subset_names, tissue, donor) %>% 
+    summarise(totalcellcount = n())
+  
+  num <- db %>% group_by(tissue, donor) %>% 
+    summarise(totalcellcount = n())
+  print(num)
   
   dt <- data.table(db)
   groupByFormatted <- 'clone_id'
@@ -179,13 +187,16 @@ for (i in 1:3){
   groupsSingletons <- groups[groupsLength==1]
   groups <- groups[groupsLength>1]
   numbOfTotalGroups <- length(groups)
+  print(numbOfTotalGroups)
   
   ## Determine what clones are disseiminate or not
   listResults  <- #List of matching clones between subsets / tissues
     foreach(i=iterators::icount(numbOfTotalGroups)) %do% {
       dfClone <- db[groups[[i]],c("clone_id", "tissue", "subset_names",
-                                  "mu_freq")]
+                                  "mu_freq", "donor", "cell_id")]
+
       cloneID <- dfClone$clone_id[1]
+      donor_cloneid <- paste0(dfClone$donor[1], "_", cloneID)
       
       #Resident vs Disseminate
       uniqueCategories <- length( unique( as.character(dfClone$tissue)) )
@@ -211,13 +222,19 @@ for (i in 1:3){
       for(a in 1:rows){
         tissue_id <- dfClone[a,"tissue"]
         subset_id <- dfClone[a,"subset_names"]
-        
-        
+        cellid <- dfClone[a, "cell_id"]
+
         matReturn = rbind(matReturn, c("cloneID"= cloneID,
-                                       "tissue"= tissue_id,
+                                       "tissue"= paste0(tissue_id),
                                        "subset" = subset_id,
                                        "clone_type" = clone_type, 
-                                       "SHM_type" = SHM_type))
+                                       "SHM_type" = SHM_type, 
+                                       "SD_mufreq" = as.numeric(uniquemufreq), 
+                                       "donor" = dfClone$donor[1], 
+                                       "donor_cloneid" = donor_cloneid,
+                                       "cell_id" = cellid,
+                                       "clone_size" = rows
+                                       ))
         
         
       }
@@ -227,170 +244,34 @@ for (i in 1:3){
   df <- do.call(rbind, listResults)
   df <- as.data.frame(df)
   
-  #Make summary stats
-  subset_names <- unique(db$subset_names)
-  
-  for (i in 1:length(subset_names)){
-    subset_use <- subset_names[i]
-    temp_dat <- subset(df, subset == subset_use, select = c("cloneID", "clone_type", "SHM_type"))
-    temp_dat_unique <- unique(temp_dat)
-    
-    temp_residentcount <- length(which(temp_dat_unique$clone_type == "Resident"))
-    temp_disscount <- length(which(temp_dat_unique$clone_type == "Disseminate"))
-    temp_percent <- (temp_disscount/temp_residentcount)*100
-    
-    statReturn <- rbind(statReturn, c("Donor" = donor, 
-                                      "Subset" = subset_use,
-                                      "Count_Res" = as.numeric(temp_residentcount),
-                                      "Count_Dis" = as.numeric(temp_disscount),
-                                      "Percent" = as.numeric(temp_percent)))
-  }
+  df_all <- rbind(df_all, df)
+  numcellssubset_all <- rbind(numcellssubset_all, numcells_subset)
 }
 
-statReturn <- NULL
-donor_list <- c("A", "B", "C")
+numcellssubset_tissue <- numcellssubset_all %>% group_by(tissue, subset_names) %>% summarise(totalcellcount = sum(totalcellcount))
 
-## Import Data (do the big loop here) 
-for (i in 1:3){
-  donor <- donor_list[i]
-  
-  #import 
-  db <- readChangeoDb(paste0("data/results/changeo/donor", donor, "_data_ph_genotyped_germ-pass.tsv"))
-  
-  #Import seurat_metadata
-  seurat_metadata <- readRDS(paste0("data/integratedall_metadata_donor", donor, ".rds"))
-  seurat_metadata  <- rownames_to_column(seurat_metadata , "cell_id")
-  seurat_metadata <- seurat_metadata[!duplicated(seurat_metadata$cell_id), ]
-  
-  #join 
-  db_join <- inner_join(seurat_metadata, db,  by='cell_id')
-  db_join$sequence_id <- db_join$cell_id
-  
-  #make dataframe for circos
-  db <- db_join
-  db <- as.data.frame(db)
-  
-  ##Adding simplified subset names
-  subset_ids <- data.frame(seurat_clusters = 0:22, 
-                           subset_names = c("MZB-1", "TS", "ABC3", "ABC1", "Memory", "aNAV", "Naive", "Memory", "ABC2", "IgM-only", "MZB-2", "Naive", "Memory", "GC", "IgM-only", "GC", "Naive", "GC", "DN-A", "aNAV", "DN-B", "ABC4", "PB"))
-  
-  subset_ids$seurat_clusters <- as.factor(subset_ids$seurat_clusters)
-  
-  #Add new column to data
-  db <- dplyr::right_join(db, subset_ids, by = c("seurat_clusters"))
-  
-  # Determine clones with 2+ cells that are tissue-resident vs disseminate
-  db$tissue <- factor(db$tissue.x, levels=c("APP","MLN","SPL"), labels=c("APP","MLN","SPL"))
-  db$seurat_clusters_old <- factor(db$seurat_clusters)
-  
-  db$seurat_clusters <- factor(db$subset_names)
-  
-  db <- observedMutations(db, sequenceColumn="sequence_alignment",
-                          germlineColumn="germline_alignment_d_mask",
-                          regionDefinition=NULL,
-                          frequency=T, 
-                          combine=T,
-                          nproc=16)
-  
-  dt <- data.table(db)
-  groupByFormatted <- 'clone_id'
-  dt <- dt[ , list( yidx = list(.I) ) , by=groupByFormatted ] #yidx = indices of repeats
-  groups <- dt[,yidx] 
-  groupsLength <- unlist(lapply(groups,length))
-  groupsSingletons <- groups[groupsLength==1]
-  groups <- groups[groupsLength>1]
-  numbOfTotalGroups <- length(groups)
-  
-  ## Determine what clones are disseiminate or not
-  listResults  <- #List of matching clones between subsets / tissues
-    foreach(i=iterators::icount(numbOfTotalGroups)) %do% {
-      dfClone <- db[groups[[i]],c("clone_id", "tissue", "subset_names",
-                                  "mu_freq")]
-      cloneID <- dfClone$clone_id[1]
-      
-      #Resident vs Disseminate
-      uniqueCategories <- length( unique( as.character(dfClone$tissue)) )
-      if( uniqueCategories==1 ){
-        clone_type <- "Resident"
-      }else{
-        clone_type <- "Disseminate"
-      }
-      
-      #SHM vs no
-      uniquemufreq <- sd(dfClone$mu_freq)
-      
-      if(uniquemufreq==0){
-        SHM_type <- "noChangeMutation"
-        
-      }else{
-        SHM_type <- "Mutation"
-      }
-      
-      rows <- nrow(dfClone)
-      matReturn <- NULL
-      
-      for(a in 1:rows){
-        tissue_id <- dfClone[a,"tissue"]
-        subset_id <- dfClone[a,"subset_names"]
-        
-        
-        matReturn = rbind(matReturn, c("cloneID"= cloneID,
-                                       "tissue"= tissue_id,
-                                       "subset" = subset_id,
-                                       "clone_type" = clone_type, 
-                                       "SHM_type" = SHM_type))
-        
-        
-      }
-      return(matReturn)
-    } 
-  
-  df <- do.call(rbind, listResults)
-  df <- as.data.frame(df)
-  
-  #Make summary stats
-  subset_names <- unique(db$subset_names)
-  
-  for (i in 1:length(subset_names)){
-    subset_use <- subset_names[i]
-    temp_dat <- subset(df, subset == subset_use, select = c("cloneID", "clone_type", "SHM_type"))
-    temp_dat_unique <- unique(temp_dat)
-    
-    temp_residentcount <- length(which(temp_dat_unique$clone_type == "Resident"))
-    temp_disscount <- length(which(temp_dat_unique$clone_type == "Disseminate"))
-    temp_percent <- (temp_disscount/temp_residentcount)*100
-    
-    statReturn <- rbind(statReturn, c("Donor" = donor, 
-                                      "Subset" = subset_use,
-                                      "Count_Res" = as.numeric(temp_residentcount),
-                                      "Count_Dis" = as.numeric(temp_disscount),
-                                      "Percent" = as.numeric(temp_percent)))
-  }
-}
-
-#Normalise between donors
-statReturn3 <- as.data.frame(statReturn)
-statReturn3$Percent <- as.numeric(statReturn3$Percent)
-avgratio_donor <- statReturn3 %>% group_by(Donor) %>% summarise(avg_percent = mean(Percent, na.rm = T))
-
-statReturn3 <- right_join(statReturn3, avgratio_donor)
-
-#Log Change (fold change of Dis/Res ratio over average ratios per donor)
-statReturn4 <- statReturn3 %>% mutate(LogChange = Percent/ avg_percent)
+sum_dat <- df_all %>% group_by(tissue, clone_type, subset) %>%
+                    summarise(cellcount = n())
 
 
-stat_plot <- ggplot(statReturn4, aes(x = Subset, y = LogChange)) + 
-  geom_boxplot() +
-  geom_point(aes(colour = Donor), size = 5) +
-  labs(y = "Normalized Dissiminated / Resident Clones") +
+sum_dat <- merge(sum_dat, numcellssubset_tissue, by.x = c("tissue", "subset"), by.y = c("tissue", "subset_names"), all.x = TRUE)
+
+sum_dat <- sum_dat %>% mutate("percentage" = (cellcount/totalcellcount)*100)
+
+#Table S4
+table_dat <- sum_dat %>% pivot_wider(names_from  = "clone_type", values_from = c("cellcount", "totalcellcount", "percentage"))
+
+write.csv(table_dat, file = file.path(out_dir, "tables4_cellnumbersinclones.csv"))
+
+#Fig 3A
+plot <- ggplot(sum_dat, aes(x = subset, y = percentage, col = clone_type)) + geom_boxplot() +   geom_point(aes(shape = tissue, group = clone_type), position=position_dodge(width=0.75)) +
+  labs(y = "Percentage of total cells in subsets", shape = "Tissue", col = c("Cells in clones \n that have members in:")) +
   theme_pubr() +
-  theme(axis.title.x=element_blank(), 
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-  geom_hline(yintercept=1, linetype="dashed", color = "black")
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), 
+        axis.title.x=element_blank(), legend.position="right") +
+  scale_color_manual(labels = c("Two or more tissues", "One tissue"), values = c("#F8766D", "#619CFF"))
 
-
-file_name <- paste0("percentage_disseminatedclones_foldchange.pdf")
-ggsave(filename = file.path(out_dir, file_name), plot = stat_plot, width = 25, height = 15, units = c("cm"))
+ggsave(plot = plot, filename = paste0(file.path(out_dir, "Fig3A_Percentagetotalcellsclones.png")), width = 22, height = 10, unit = c("cm"))
 
 #### Fig 3c (correlation tables)
 library(RcmdrMisc) #rcorr.adjust function

@@ -1,4 +1,4 @@
-#Figure2-3 (Figure2d, Figure 3a, c, d)
+#Figure2-3 (Figure2d, Figure 3a, c, d, Table S4)
 #scVDJ analysis of tisues
 
 #For this section, all the analysis was done using the Kleinstein Immcantation (Version 4.0) docker image and RStudio. For more details on how to install this, please visit their documentation: https://immcantation.readthedocs.io/en/stable/docker/intro.html. Majority of this analysis was done prior to the latest Immcantation update which incorporates more streamline 10X analysis into their pipeline.

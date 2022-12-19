@@ -29,11 +29,11 @@ COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$TRANSITIONAL]] =  "#D49794"
 COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$NAIVE]] = "#75ABC5"
 COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$MZB_2]] = "#D3B6DB"
 COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$MZB_1]] = "#95EA4F"
-COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$IGM_ONLY]] ="#9B9C59" 
+COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$IGM_ONLY]] ="#9B9C59"
 COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$CSM]] = '#778BD5'
-COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$ACTIVATED_NAIVE]] = "#E4DB61" 
+COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$ACTIVATED_NAIVE]] = "#E4DB61"
 COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$DN2]] = "#CFDFDE"
-COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$PLASMABLASTS]] = "#DA4BA0" 
+COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$PLASMABLASTS]] = "#DA4BA0"
 COLOURS[[MANUAL_CLASSIFICATION]][[CLASSIFICATIONS$MALAT1]] = "#DC694C"
 COLOURS[['status']] <- c("health" = "dodgerblue", "lupus" = "orange")
 
@@ -153,7 +153,7 @@ QC_features <- function(seurat_obj){
   seurat_obj[['HASH2']] <- hash_data$`HTO-AHH2-TotalSeqC`
   
   # Get a list of all features and remove the hashes from it
-  features_to_keep <- c(rownames(seurat_obj@assays$ADT), 
+  features_to_keep <- c(rownames(seurat_obj@assays$ADT),
                         rownames(seurat_obj@assays$RNA),
                         rownames(seurat_obj@assays$IG))
   features_to_keep <- features_to_keep[features_to_keep != 'HTO-AHH1-TotalSeqC' & features_to_keep != 'HTO-AHH2-TotalSeqC']
@@ -204,24 +204,24 @@ QC_sample <- function(seurat_obj, sample_name, colour, filename){
   
   # Create histograms of all metrics
   plots <- list()
-  plots[[1]] <- ggplot(seurat_obj@meta.data, aes(x=nFeature_RNA)) + 
-    geom_histogram(color=colour, fill=colour, binwidth=10) + xlim(0,4000) + 
-    geom_vline(xintercept=nFeature_min) + 
+  plots[[1]] <- ggplot(seurat_obj@meta.data, aes(x=nFeature_RNA)) +
+    geom_histogram(color=colour, fill=colour, binwidth=10) + xlim(0,4000) +
+    geom_vline(xintercept=nFeature_min) +
     geom_vline(xintercept=nFeature_max) +
     ggtitle(paste("min =", round(nFeature_min) , ", max =", round(nFeature_max)))
-  plots[[2]] <- ggplot(seurat_obj@meta.data, aes(x=nCount_RNA)) + 
-    geom_histogram(color=colour, fill=colour, binwidth=50) + xlim(0,20000) + 
-    geom_vline(xintercept=nCount_min) + 
+  plots[[2]] <- ggplot(seurat_obj@meta.data, aes(x=nCount_RNA)) +
+    geom_histogram(color=colour, fill=colour, binwidth=50) + xlim(0,20000) +
+    geom_vline(xintercept=nCount_min) +
     geom_vline(xintercept=nCount_max) +
     ggtitle(paste("min =", round(nCount_min) , ", max =", round(nCount_max)))
-  plots[[3]] <- ggplot(seurat_obj@meta.data, aes(x=percent.mt)) + 
-    geom_histogram(color=colour, fill=colour, binwidth=0.25) + xlim(0,100)+ 
+  plots[[3]] <- ggplot(seurat_obj@meta.data, aes(x=percent.mt)) +
+    geom_histogram(color=colour, fill=colour, binwidth=0.25) + xlim(0,100)+
     geom_vline(xintercept=mt_max) +
     ggtitle(paste("max =", round(mt_max,5)))
-  plots[[4]] <- ggplot(seurat_obj@meta.data,aes(nCount_RNA, nFeature_RNA, color=percent.mt)) + 
-    geom_point() + ggtitle(sample) + 
-    geom_vline(xintercept = nCount_min) + geom_vline(xintercept = nCount_max) + 
-    geom_hline(yintercept = nFeature_min) + geom_hline(yintercept = nFeature_max) + 
+  plots[[4]] <- ggplot(seurat_obj@meta.data,aes(nCount_RNA, nFeature_RNA, color=percent.mt)) +
+    geom_point() + ggtitle(sample) +
+    geom_vline(xintercept = nCount_min) + geom_vline(xintercept = nCount_max) +
+    geom_hline(yintercept = nFeature_min) + geom_hline(yintercept = nFeature_max) +
     scale_color_gradient(low="grey", high=colour)
   
   pdf(filename)
@@ -230,7 +230,7 @@ QC_sample <- function(seurat_obj, sample_name, colour, filename){
   
   # Perform the subset based on threshold values
   temp_obj <- subset(seurat_obj, subset = nFeature_RNA >= nFeature_min & nFeature_RNA < nFeature_max &
-                       nCount_RNA >= nCount_min & nCount_RNA < nCount_max & 
+                       nCount_RNA >= nCount_min & nCount_RNA < nCount_max &
                        percent.mt < mt_max & percent.Bcell > bcell_min)
   return(temp_obj)
 }
@@ -259,7 +259,7 @@ for (sample in ls(qc_samples)) {
   
   # Normalise ADT
   norm_samples[[sample]] <- NormalizeData(norm_samples[[sample]], assay = "ADT", normalization.method = "CLR", verbose = F)
-} 
+}
 
 
 num_anchor_genes <- 360
@@ -284,11 +284,24 @@ print(p)
 dev.off()
 
 # Checking batch correction
-p <- DimPlot(integrated_samples, reduction = 'umap', group.by = 'Sample', cols = COLOURS$Sample) + NoLegend() | 
-  DimPlot(integrated_samples, reduction = 'umap', group.by = 'Sample', cols = COLOURS$Sample, split.by = 'Sample', ncol = 3) 
+p <- DimPlot(integrated_samples, reduction = 'umap', group.by = 'Sample', cols = COLOURS$Sample) + NoLegend() |
+  DimPlot(integrated_samples, reduction = 'umap', group.by = 'Sample', cols = COLOURS$Sample, split.by = 'Sample', ncol = 3)
 pdf(file.path(out_dir, 'umap_by_sample.pdf'), width = 14)
 print(p)
 dev.off()
+
+# Classifying ----
+integrated_samples[[MANUAL_CLASSIFICATION]] <- 'Uncertain'
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(2)),] <- CLASSIFICATIONS$TRANSITIONAL
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(0, 1, 4, 5, 6, 7, 8, 13, 14)),] <- CLASSIFICATIONS$NAIVE
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(11)),] <- CLASSIFICATIONS$MZB_2
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(3)),] <- CLASSIFICATIONS$MZB_1
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(18)),] <- CLASSIFICATIONS$DN2
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(9)),] <- CLASSIFICATIONS$ACTIVATED_NAIVE
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(20)),] <- CLASSIFICATIONS$PLASMABLASTS
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(15, 10)),] <- CLASSIFICATIONS$IGM_ONLY
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(12, 16, 17)),] <- CLASSIFICATIONS$CSM
+integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(19)),] <- CLASSIFICATIONS$MALAT1
 
 # Markers ----------------------------------------
 integrated_samples@active.ident <- as.factor(integrated_samples$manual_classification)

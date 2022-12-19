@@ -290,6 +290,12 @@ pdf(file.path(out_dir, 'umap_by_sample.pdf'), width = 14)
 print(p)
 dev.off()
 
+# Clustering --------------------------------------------------------------
+integrated_samples <- FindNeighbors(integrated_samples, assay = 'integrated', dims=dims)
+
+# Choose cluster resolution
+integrated_samples <- FindClusters(integrated_samples, resolution = 1.8)
+
 # Classifying ----
 integrated_samples[[MANUAL_CLASSIFICATION]] <- 'Uncertain'
 integrated_samples[[MANUAL_CLASSIFICATION]][WhichCells(integrated_samples, idents = c(2)),] <- CLASSIFICATIONS$TRANSITIONAL
